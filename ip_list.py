@@ -258,7 +258,7 @@ class IPList:
         return self.file_path
 
     @property
-    def set(self):
+    def ip_set(self):
         return self.ips
 
     @property
