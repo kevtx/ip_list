@@ -116,7 +116,6 @@ class IPList:
         if self.file_path is None:
             raise ValueError("Cannot read from file: no file_path set")
         logging.debug(f"Reading IP list from {self.file_path}")
-        self.ips.clear()
         ips_from_file = set()
         with open(self.file_path, "r") as f:
             for line in f:
@@ -142,7 +141,6 @@ class IPList:
                     else:
                         raise ValueError(f"IPv6 address found and not ignored: {line}")
 
-        self.ips.clear()
         self.ips = ips_from_file
         logging.info(f"Loaded IP list from: {self.file_path}")
 
@@ -326,21 +324,6 @@ class IPList:
         return list(self.ips)
 
     @property
-    def quoted_abs(self):
-        """
-        Shell-quoted absolute path to the backing file.
-
-        Returns
-        -------
-        Optional[str]
-            The absolute path to :attr:`file_path`, expanded with
-            ``Path.expanduser()``, converted to a string, and safely quoted
-            using :func:`shlex.quote`. Returns ``None`` if no file is
-            associated with this instance.
-        """
-        return self.quoted_absolute_path
-
-    @property
     def quoted_absolute_path(self) -> Optional[str]:
         """
         Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
@@ -364,8 +347,8 @@ class IPList:
 
         Notes
         -----
-        This is a backwards-compatible alias for :meth:`quoted_absolute_path`.
-        Prefer using :meth:`quoted_absolute_path` for clarity.
+        This is a backwards-compatible alias for :attr:`quoted_absolute_path`.
+        Prefer using :attr:`quoted_absolute_path` for clarity.
         """
         return self.quoted_absolute_path
 

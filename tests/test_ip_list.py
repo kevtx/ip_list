@@ -331,7 +331,7 @@ class TestIPList(unittest.TestCase):
         self.assertIsNotNone(quoted_path)
         self.assertIsInstance(quoted_path, str)
         # The path should be quoted (safe for shell use)
-        # Since test_data/valid_ips.txt doesn't have special characters, 
+        # Since test_data/valid_ips.txt doesn't have special characters,
         # it might not have quotes, but it should contain the filename
         self.assertIn("valid_ips.txt", quoted_path)
 
@@ -342,18 +342,18 @@ class TestIPList(unittest.TestCase):
         self.assertIsNone(ip_list.quoted_abs)
 
     def test_quoted_absolute_path_method(self):
-        """Test the 'quoted_absolute_path' method."""
+        """Test the 'quoted_absolute_path' property."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        quoted_path = ip_list.quoted_absolute_path()
+        quoted_path = ip_list.quoted_absolute_path
         self.assertIsNotNone(quoted_path)
         self.assertIsInstance(quoted_path, str)
         # Should contain the absolute path
         self.assertIn("valid_ips.txt", quoted_path)
 
     def test_quoted_abs_aliases_quoted_absolute_path(self):
-        """Test that 'quoted_abs' property calls 'quoted_absolute_path' method."""
+        """Test that 'quoted_abs' property aliases 'quoted_absolute_path' property."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        self.assertEqual(ip_list.quoted_abs, ip_list.quoted_absolute_path())
+        self.assertEqual(ip_list.quoted_abs, ip_list.quoted_absolute_path)
 
 
 if __name__ == "__main__":
