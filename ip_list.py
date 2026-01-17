@@ -30,7 +30,7 @@ class IPList:
         write_to_tempfile(): Writes the IP list to a temporary file and returns the path object.
         to_tempfile(): Context manager for temporary file creation.
 
-    Supported dunders: __contains__, __eq__, __len__, __len__, __reduce__, __repr__, __str__
+    Supported dunders: __contains__, __eq__, __len__, __reduce__, __repr__, __str__
 
     """
 
