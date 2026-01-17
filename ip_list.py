@@ -327,10 +327,22 @@ class IPList:
             ``Path.expanduser()``, converted to a string, and safely quoted
             using :func:`shlex.quote`. Returns ``None`` if no file is
             associated with this instance.
+    def quoted_absolute_path(self) -> Optional[str]:
+        """
+        Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
+
+        The returned string is safe to embed in shell commands because it is quoted using shlex.quote.
         """
         return quote(str(self.path.expanduser().absolute())) if self.path else None
 
+    @property
+    def quoted_abs(self) -> Optional[str]:
+        """
+        Backwards-compatible alias for quoted_absolute_path.
 
+        Prefer using quoted_absolute_path for clarity.
+        """
+        return self.quoted_absolute_path
 if __name__ == "__main__":
     import argparse
 
