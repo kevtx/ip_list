@@ -58,12 +58,13 @@ This is a lightweight Python library for managing lists of IP addresses loaded f
       else:
           raise ValueError(f"IPv6 address found and not ignored: {line}")
   ```
-- **File Parsing**: Strip whitespace and check for comments (`#`) before validation:
+- **File Parsing**: Strip whitespace and skip empty lines or lines containing `#` (comments):
   ```python
   line = line.strip()
   if not line or "#" in line:
       continue
   ```
+  Note: Current implementation skips any line containing `#` anywhere in the line, not just comment-only lines.
 - **Temporary File Handling**: Always clean up temporary files, prefer context managers:
   ```python
   with ip_list.to_tempfile() as temp_path:
