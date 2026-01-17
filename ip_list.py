@@ -340,6 +340,7 @@ class IPList:
         """
         return self.quoted_absolute_path
 
+    @property
     def quoted_absolute_path(self) -> Optional[str]:
         """
         Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
@@ -351,9 +352,20 @@ class IPList:
     @property
     def quoted_abs(self) -> Optional[str]:
         """
-        Backwards-compatible alias for quoted_absolute_path.
+        Shell-quoted absolute path to the backing file.
 
-        Prefer using quoted_absolute_path for clarity.
+        Returns
+        -------
+        Optional[str]
+            The absolute path to :attr:`file_path`, expanded with
+            ``Path.expanduser()``, converted to a string, and safely quoted
+            using :func:`shlex.quote`. Returns ``None`` if no file is
+            associated with this instance.
+
+        Notes
+        -----
+        This is a backwards-compatible alias for :meth:`quoted_absolute_path`.
+        Prefer using :meth:`quoted_absolute_path` for clarity.
         """
         return self.quoted_absolute_path
 
