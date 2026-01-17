@@ -331,7 +331,7 @@ class TestIPList(unittest.TestCase):
         self.assertIsNotNone(quoted_path)
         self.assertIsInstance(quoted_path, str)
         # The path should be quoted (safe for shell use)
-        # Since test_data/valid_ips.txt doesn't have special chars, 
+        # Since test_data/valid_ips.txt doesn't have special characters, 
         # it might not have quotes, but it should contain the filename
         self.assertIn("valid_ips.txt", quoted_path)
 
