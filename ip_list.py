@@ -18,11 +18,11 @@ class IPList:
     Attributes:
         file_path (Path | None): The path to the file containing IP addresses.
             aliases: file, path
-            coersion: quoted_abs[olute]
+            coercion: quoted_abs[olute]
         ignore_invalid (bool): Whether to ignore invalid IP addresses.
         ips (Set[str]): A set of valid IP addresses.
             aliases: values, set
-            coersions: list
+            coercions: list
 
     Methods:
         read(): Reads and validates IP addresses from the file.
@@ -75,9 +75,19 @@ class IPList:
         logging.debug("Loading IP list from provided list")
         self.ips.clear()
         for line in ips:
+            # Normalize whitespace
             line = line.strip()
-            if not line or "#" in line:
+            if not line:
+                # Skip empty lines
                 continue
+
+            # Handle inline comments in the same way as file-based loading:
+            # take only the part before the first '#' and strip it again.
+            if "#" in line:
+                line = line.split("#", 1)[0].strip()
+                if not line:
+                    # Line contained only a comment after stripping
+                    continue
             try:
                 ip = ipaddress.ip_address(line)
             except ValueError:
@@ -315,6 +325,22 @@ class IPList:
         """
         return list(self.ips)
 
+    @property
+    def quoted_abs(self):
+        """
+        Shell-quoted absolute path to the backing file.
+
+        Returns
+        -------
+        Optional[str]
+            The absolute path to :attr:`file_path`, expanded with
+            ``Path.expanduser()``, converted to a string, and safely quoted
+            using :func:`shlex.quote`. Returns ``None`` if no file is
+            associated with this instance.
+        """
+        return self.quoted_absolute_path
+
+    @property
     def quoted_absolute_path(self) -> Optional[str]:
         """
         Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
@@ -341,7 +367,9 @@ class IPList:
         This is a backwards-compatible alias for :meth:`quoted_absolute_path`.
         Prefer using :meth:`quoted_absolute_path` for clarity.
         """
-        return self.quoted_absolute_path()
+        return self.quoted_absolute_path
+
+
 if __name__ == "__main__":
     import argparse
 

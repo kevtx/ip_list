@@ -1,7 +1,7 @@
 set dotenv-load
 
-import '/Users/keo/.config/just/python.justfile'
-import '/Users/keo/.config/just/conda.justfile'
+import '{{env_var("HOME")}}/.config/just/python.justfile'
+import '{{env_var("HOME")}}/.config/just/conda.justfile'
 
 PROJECT_ROOT := clean(justfile_directory())
 
@@ -21,7 +21,7 @@ init:
 [no-exit-message]
 [group('project')]
 format:
-    bash -c .githooks/pre-commit --format
+    bash .githooks/pre-commit --format
 
 
 [windows]
