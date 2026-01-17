@@ -249,6 +249,112 @@ class TestIPList(unittest.TestCase):
             temp_ip_list = IPList(temp_path)
             self.assertEqual(ip_list.ips, temp_ip_list.ips)
 
+    def test_file_property_alias(self):
+        """Test that the 'file' property is an alias for 'file_path'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.file, ip_list.file_path)
+        self.assertEqual(ip_list.file, self.valid_ips_file)
+
+    def test_file_property_with_list(self):
+        """Test that the 'file' property returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.file)
+
+    def test_path_property_alias(self):
+        """Test that the 'path' property is an alias for 'file_path'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.path, ip_list.file_path)
+        self.assertEqual(ip_list.path, self.valid_ips_file)
+
+    def test_path_property_with_list(self):
+        """Test that the 'path' property returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.path)
+
+    def test_set_property_alias(self):
+        """Test that the 'set' property is an alias for 'ips'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.set, ip_list.ips)
+        self.assertEqual(len(ip_list.set), 2)
+        self.assertIn("192.168.1.1", ip_list.set)
+
+    def test_set_property_mutation(self):
+        """Test that mutating the 'set' property affects the IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list.set.add("8.8.8.8")
+        self.assertEqual(len(ip_list), 3)
+        self.assertIn("8.8.8.8", ip_list)
+
+    def test_values_property_alias(self):
+        """Test that the 'values' property is an alias for 'ips'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.values, ip_list.ips)
+        self.assertEqual(len(ip_list.values), 2)
+        self.assertIn("10.0.0.1", ip_list.values)
+
+    def test_values_property_mutation(self):
+        """Test that mutating the 'values' property affects the IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list.values.add("1.1.1.1")
+        self.assertEqual(len(ip_list), 3)
+        self.assertIn("1.1.1.1", ip_list)
+
+    def test_list_property(self):
+        """Test that the 'list' property returns a list view of IPs."""
+        ips = ["192.168.1.1", "10.0.0.1", "8.8.8.8"]
+        ip_list = IPList(ips=ips)
+        ip_list_view = ip_list.list
+        self.assertIsInstance(ip_list_view, list)
+        self.assertEqual(len(ip_list_view), 3)
+        self.assertIn("192.168.1.1", ip_list_view)
+        self.assertIn("10.0.0.1", ip_list_view)
+        self.assertIn("8.8.8.8", ip_list_view)
+
+    def test_list_property_is_copy(self):
+        """Test that the 'list' property returns a copy, not a reference."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list_view = ip_list.list
+        # Mutating the list should not affect the original IPList
+        ip_list_view.append("8.8.8.8")
+        self.assertEqual(len(ip_list), 2)
+        self.assertNotIn("8.8.8.8", ip_list)
+
+    def test_quoted_abs_property_with_file(self):
+        """Test the 'quoted_abs' property with a file-based IPList."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        quoted_path = ip_list.quoted_abs
+        self.assertIsNotNone(quoted_path)
+        self.assertIsInstance(quoted_path, str)
+        # The path should be quoted (safe for shell use)
+        # Since test_data/valid_ips.txt doesn't have special chars, 
+        # it might not have quotes, but it should contain the filename
+        self.assertIn("valid_ips.txt", quoted_path)
+
+    def test_quoted_abs_property_with_list(self):
+        """Test that 'quoted_abs' returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.quoted_abs)
+
+    def test_quoted_absolute_path_method(self):
+        """Test the 'quoted_absolute_path' method."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        quoted_path = ip_list.quoted_absolute_path()
+        self.assertIsNotNone(quoted_path)
+        self.assertIsInstance(quoted_path, str)
+        # Should contain the absolute path
+        self.assertIn("valid_ips.txt", quoted_path)
+
+    def test_quoted_abs_aliases_quoted_absolute_path(self):
+        """Test that 'quoted_abs' property calls 'quoted_absolute_path' method."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertEqual(ip_list.quoted_abs, ip_list.quoted_absolute_path())
+
 
 if __name__ == "__main__":
     unittest.main()
