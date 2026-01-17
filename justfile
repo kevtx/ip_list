@@ -21,7 +21,7 @@ init:
 [no-exit-message]
 [group('project')]
 format:
-    bash -c .githooks/pre-commit --format
+    bash .githooks/pre-commit --format
 
 
 [windows]
