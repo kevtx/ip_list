@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+
+################################################################################
+# This script performs these auto-formatting steps to ensure code consistency. #
+#   1. black      primary style                                                #
+#   2. isort      import sorting                                               #
+#   3. autoflake  purge unused imports                                         #
+################################################################################
+
+SILENT=true
+HANDLE_REQUIREMENTS_WITH="conda" # pip or conda
+
+# If true, the script will exit with a non-zero code if either:
+#   - Any step fails
+#   - Any formatting was applied
+# (AKA pre-commit mode)
+SHOULD_FAIL=true
+
+
+help() {
+    printf "Usage: %s [--verbose] [--no-fail|--format]\n" "$(basename "$0")"
+    printf "\t--verbose             Run in verbose mode\n"
+    printf "\t--no-fail, --format   Do not fail if any step fails or any formatting is applied\n"
+}
+
+if [[ ! -d "$PWD/.git" ]]; then
+    printf "[!] This script must be run from the root of the repository.\n"
+    exit 1
+fi
+
+MAX_ARGUMENTS=4
+if [ $# -gt "$MAX_ARGUMENTS" ]; then
+    printf "[!] Too many arguments (max=%s).\n" "$MAX_ARGUMENTS"
+    help
+    exit 1
+elif [ $# -gt 0 ]; then
+    if [[ " $* " =~ " --help " ]]; then
+        help
+        exit 0
+    fi
+
+    for arg in "$@"; do
+        case "$arg" in
+        --verbose)
+            SILENT=false
+            ;;
+        --no-fail | --format)
+            SHOULD_FAIL=false
+            ;;
+        *)
+            printf "[!] Unknown argument: %s\n" "$arg"
+            exit 1
+            ;;
+        esac
+    done
+fi
+
+# Ensure we're in a virtual environment for whatever package manager we're using
+case "$HANDLE_REQUIREMENTS_WITH" in
+conda)
+    if [[ -z "$CONDA_PREFIX" ]]; then
+        printf "[!] This script must be run from a conda environment.\n"
+        exit 1
+    else PKG_PREFIX="conda install -y"; fi
+    ;;
+pip)
+    if [[ -z "$VIRTUAL_ENV" ]]; then
+        printf "[!] This script must be run from a virtual environment.\n"
+        exit 1
+    else PKG_PREFIX="python -m pip install"; fi
+    ;;
+*)
+    printf "[!] Unknown package manager: %s\n" "$HANDLE_REQUIREMENTS_WITH"
+    exit 1
+    ;;
+esac
+
+is_installed() {
+    local module
+    module=$(printf "%s" "$1" | tr -cd 'A-Za-z0-9.=_-')
+    if (python -c "import $module" &>/dev/null); then
+        return 0
+    else return 1; fi
+}
+
+install_if_needed() {
+    local pkg
+    pkg=$(printf "%s" "$1" | tr -cd 'A-Za-z0-9.=_-')
+    if ! is_installed "$pkg"; then
+        printf "[>] Installing %s ...\n" "$pkg"
+        cmd="$PKG_PREFIX $pkg"
+        if $SILENT; then
+            (${cmd} --quiet) &>/dev/null
+        else ${cmd}; fi
+    fi
+}
+
+get_extension() {
+    local filename="$1"
+    echo "${filename##*.}"
+}
+
+combined_changes_sha256() {
+    git status --porcelain |
+        awk '/^[MA ]?[MA]/ {print substr($0,4)}' |
+        xargs -I {} sh -c '[[ -f "{}" ]] && sha256sum "{}"' |
+        cut -d' ' -f1 |
+        sort |
+        sha256sum |
+        cut -d' ' -f1
+}
+
+is_file_modified() {
+    if git status --porcelain "$file" | grep -q "^.M\|^M."; then
+        return 0  # File is modified
+    else
+        return 1  # File is not modified
+    fi
+}
+
+list_modified_files() {
+    git status --porcelain |
+        awk '/^[MA ]?[MA]/ {print substr($0,4)}' |
+        while read -r file; do
+            if [[ -f "$file" ]]; then stat "$args" "$file"; fi
+        done |
+        awk -v ts="$timestamp" '$1 > ts {print $2}' |
+        sort
+}
+
+get_ts() {
+    date +%s
+}
+
+changes_after_timestamp() {
+    is_valid_epoch() { [[ $1 =~ ^[0-9]+$ ]] && (($1 >= 0 && $1 <= 2147483647)); }
+    local timestamp
+    local args
+    if ! is_valid_epoch "$1"; then
+        printf "[!] Invalid timestamp: %s\n" "$1"
+        exit 1
+    fi
+    timestamp="$1"
+    if [[ "$OSTYPE" == "darwin"* ]]; then args="-f %m %N"; else args="-c %Y %n"; fi
+    git status --porcelain |
+        awk '/^[MA ]?[MA]/ {print substr($0,4)}' |
+        while read -r file; do
+            if [[ -f "$file" ]]; then stat "$args" "$file"; fi
+        done |
+        awk -v ts="$timestamp" '$1 > (ts - 1) {print $2}' |
+        sort
+}
+
+hash_pre=$(combined_changes_sha256)
+formatted_files=()
+
+STEPS=(
+    "black $PWD"
+    "isort $PWD"
+    "autoflake --remove-all-unused-imports --in-place --recursive $PWD"
+)
+
+if ! $SILENT; then printf "\n"; fi
+for STEP in "${STEPS[@]}"; do
+    pkg=$(printf "%s" "$STEP" | cut -d ' ' -f 1)
+    install_if_needed "$pkg"
+    step_fail=false
+    start_ts=$(get_ts)
+    if $SILENT; then
+        if (${STEP} &>/dev/null); then
+            printf "[✓] Complete:\t%s\n" "$pkg"
+        else
+            printf "[✗] Failed:\t%s\n" "$pkg"
+            if $SHOULD_FAIL; then step_fail=true; fi
+        fi
+    else
+        printf "\n[>] Running:\t%s\n" "$STEP"
+        if ${STEP}; then
+            printf "[✓] Complete:\t%s\n" "$pkg"
+        else
+            printf "[✗] Failed:\t%s\n" "$pkg"
+            if $SHOULD_FAIL; then step_fail=true; fi
+        fi
+    fi
+    changes=$(changes_after_timestamp "$start_ts")
+    if [[ -n "$changes" ]]; then
+        formatted_files+=("$changes")
+    fi
+    if $step_fail; then exit 1; fi
+done
+if ! $SILENT; then printf "\n"; fi
+
+hash_post=$(combined_changes_sha256)
+if [[ "$hash_pre" != "$hash_post" ]]; then
+    printf "[!] Formatting changes were applied to these files.\n"
+    if $SHOULD_FAIL; then
+        printf "    Please re-commit after reviewing! ~~~~~~~~~~~~~\n\n"
+    fi
+
+
+    # Remove duplicates
+    mapfile -t formatted_files < <(printf '%s\n' "${formatted_files[@]}" | sort -u)
+    for file in "${formatted_files[@]}"; do
+        printf "    - %s\n" "$file"
+    done
+
+    if $SHOULD_FAIL; then exit 1; else exit 0; fi
+else
+    printf "[-] No formatting necessary.\n"
+fi

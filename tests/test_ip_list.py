@@ -47,7 +47,7 @@ class TestIPList(unittest.TestCase):
     def test_read_valid_ips(self):
         """Test reading a file with valid IP addresses."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 2)
+        self.assertEqual(len(ip_list), 2)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.1", ip_list)
         self.assertNotIn("2001:0db8:85a3:0000:0000:8a2e:0370:7334", ip_list)
@@ -65,7 +65,7 @@ class TestIPList(unittest.TestCase):
     def test_read_invalid_ips_ignore(self):
         """Test reading a file with invalid IPs and ignore_invalid=True."""
         ip_list = IPList(self.invalid_ips_file, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 2)
+        self.assertEqual(len(ip_list), 2)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.2", ip_list)
         self.assertNotIn("not-an-ip", ip_list)
@@ -73,13 +73,13 @@ class TestIPList(unittest.TestCase):
     def test_reload(self):
         """Test reloading the IP list from the file."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 2)
+        self.assertEqual(len(ip_list), 2)
 
         with open(self.valid_ips_file, "a") as f:
             f.write("8.8.8.8\n")
 
         ip_list.reload()
-        self.assertEqual(len(ip_list.ip_list), 3)
+        self.assertEqual(len(ip_list), 3)
         self.assertIn("8.8.8.8", ip_list)
 
     def test_equality(self):
@@ -115,13 +115,13 @@ class TestIPList(unittest.TestCase):
     def test_empty_file(self):
         """Test reading from an empty file."""
         ip_list = IPList(self.empty_file)
-        self.assertEqual(len(ip_list.ip_list), 0)
+        self.assertEqual(len(ip_list), 0)
 
     def test_init_with_list(self):
         """Test initializing IPList with a list of IPs."""
         ips = ["192.168.1.1", "10.0.0.1", "8.8.8.8"]
-        ip_list = IPList(ip_addresses=ips)
-        self.assertEqual(len(ip_list.ip_list), 3)
+        ip_list = IPList(ips=ips)
+        self.assertEqual(len(ip_list), 3)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.1", ip_list)
         self.assertIn("8.8.8.8", ip_list)
@@ -131,13 +131,13 @@ class TestIPList(unittest.TestCase):
         """Test initializing with invalid IPs and ignore_invalid=False."""
         ips = ["192.168.1.1", "not-an-ip", "10.0.0.1"]
         with self.assertRaises(ValueError):
-            IPList(ip_addresses=ips)
+            IPList(ips=ips)
 
     def test_init_with_list_invalid_ips_ignore(self):
         """Test initializing with invalid IPs and ignore_invalid=True."""
         ips = ["192.168.1.1", "not-an-ip", "10.0.0.1"]
-        ip_list = IPList(ip_addresses=ips, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 2)
+        ip_list = IPList(ips=ips, ignore_invalid=True)
+        self.assertEqual(len(ip_list), 2)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.1", ip_list)
 
@@ -145,44 +145,44 @@ class TestIPList(unittest.TestCase):
         """Test initializing with IPv6 and ignore_invalid=False."""
         ips = ["192.168.1.1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
         with self.assertRaisesRegex(ValueError, "IPv6 address found and not ignored"):
-            IPList(ip_addresses=ips)
+            IPList(ips=ips)
 
     def test_init_with_list_ipv6_ignore(self):
         """Test initializing with IPv6 and ignore_invalid=True."""
         ips = ["192.168.1.1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "10.0.0.1"]
-        ip_list = IPList(ip_addresses=ips, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 2)
+        ip_list = IPList(ips=ips, ignore_invalid=True)
+        self.assertEqual(len(ip_list), 2)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.1", ip_list)
 
     def test_init_with_list_comments_and_whitespace(self):
         """Test initializing with list containing comments and whitespace."""
         ips = ["192.168.1.1", "  10.0.0.1  ", "# comment", "", "8.8.8.8"]
-        ip_list = IPList(ip_addresses=ips, ignore_invalid=True)
-        self.assertEqual(len(ip_list.ip_list), 3)
+        ip_list = IPList(ips=ips, ignore_invalid=True)
+        self.assertEqual(len(ip_list), 3)
         self.assertIn("192.168.1.1", ip_list)
         self.assertIn("10.0.0.1", ip_list)
         self.assertIn("8.8.8.8", ip_list)
 
     def test_init_no_args_raises(self):
-        """Test that initializing without file_path or ip_addresses raises ValueError."""
+        """Test that initializing without file_path or ips raises ValueError."""
         with self.assertRaisesRegex(
-            ValueError, "Either file_path or ip_addresses must be provided"
+            ValueError, "Either file_path or ips must be provided"
         ):
             IPList()
 
     def test_init_both_args_raises(self):
-        """Test that providing both file_path and ip_addresses raises ValueError."""
+        """Test that providing both file_path and ips raises ValueError."""
         ips = ["192.168.1.1"]
         with self.assertRaisesRegex(
-            ValueError, "Cannot provide both file_path and ip_addresses"
+            ValueError, "Cannot provide both file_path and ips"
         ):
-            IPList(file_path=self.valid_ips_file, ip_addresses=ips)
+            IPList(file_path=self.valid_ips_file, ips=ips)
 
     def test_write_to_tempfile(self):
         """Test writing IP list to a temporary file."""
         ips = ["192.168.1.1", "10.0.0.1", "8.8.8.8"]
-        ip_list = IPList(ip_addresses=ips)
+        ip_list = IPList(ips=ips)
         temp_file = ip_list.write_to_tempfile()
 
         try:
@@ -197,7 +197,7 @@ class TestIPList(unittest.TestCase):
     def test_to_tempfile_context_manager(self):
         """Test the to_tempfile context manager."""
         ips = ["192.168.1.1", "10.0.0.1"]
-        ip_list = IPList(ip_addresses=ips)
+        ip_list = IPList(ips=ips)
 
         with ip_list.to_tempfile() as temp_path:
             self.assertTrue(temp_path.exists())
@@ -212,40 +212,148 @@ class TestIPList(unittest.TestCase):
     def test_reload_without_file_raises(self):
         """Test that reload raises ValueError when no file_path is set."""
         ips = ["192.168.1.1"]
-        ip_list = IPList(ip_addresses=ips)
+        ip_list = IPList(ips=ips)
         with self.assertRaisesRegex(ValueError, "Cannot reload: no file_path set"):
             ip_list.reload()
 
     def test_read_without_file_raises(self):
         """Test that read raises ValueError when no file_path is set."""
         ips = ["192.168.1.1"]
-        ip_list = IPList(ip_addresses=ips)
-        with self.assertRaisesRegex(ValueError, "Cannot read from file: no file_path set"):
+        ip_list = IPList(ips=ips)
+        with self.assertRaisesRegex(
+            ValueError, "Cannot read from file: no file_path set"
+        ):
             ip_list.read()
 
     def test_repr_with_list(self):
         """Test __repr__ for list-based initialization."""
         ips = ["192.168.1.1", "10.0.0.1"]
-        ip_list = IPList(ip_addresses=ips)
+        ip_list = IPList(ips=ips)
         expected_repr = "IPList(from_list=True, ignore_invalid=False, ip_count=2)"
         self.assertEqual(repr(ip_list), expected_repr)
 
     def test_str_with_list(self):
         """Test __str__ for list-based initialization."""
         ips = ["192.168.1.1", "10.0.0.1"]
-        ip_list = IPList(ip_addresses=ips)
+        ip_list = IPList(ips=ips)
         expected_str = "IPList with 2 IPs from list"
         self.assertEqual(str(ip_list), expected_str)
 
     def test_tempfile_usage_with_file_based_iplist(self):
         """Test that tempfile methods work with file-based IPList too."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        
+
         with ip_list.to_tempfile() as temp_path:
             self.assertTrue(temp_path.exists())
             # Read back and verify
             temp_ip_list = IPList(temp_path)
-            self.assertEqual(ip_list.ip_list, temp_ip_list.ip_list)
+            self.assertEqual(ip_list.ips, temp_ip_list.ips)
+
+    def test_file_property_alias(self):
+        """Test that the 'file' property is an alias for 'file_path'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.file, ip_list.file_path)
+        self.assertEqual(ip_list.file, self.valid_ips_file)
+
+    def test_file_property_with_list(self):
+        """Test that the 'file' property returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.file)
+
+    def test_path_property_alias(self):
+        """Test that the 'path' property is an alias for 'file_path'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.path, ip_list.file_path)
+        self.assertEqual(ip_list.path, self.valid_ips_file)
+
+    def test_path_property_with_list(self):
+        """Test that the 'path' property returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.path)
+
+    def test_set_property_alias(self):
+        """Test that the 'set' property is an alias for 'ips'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.set, ip_list.ips)
+        self.assertEqual(len(ip_list.set), 2)
+        self.assertIn("192.168.1.1", ip_list.set)
+
+    def test_set_property_mutation(self):
+        """Test that mutating the 'set' property affects the IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list.set.add("8.8.8.8")
+        self.assertEqual(len(ip_list), 3)
+        self.assertIn("8.8.8.8", ip_list)
+
+    def test_values_property_alias(self):
+        """Test that the 'values' property is an alias for 'ips'."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertIs(ip_list.values, ip_list.ips)
+        self.assertEqual(len(ip_list.values), 2)
+        self.assertIn("10.0.0.1", ip_list.values)
+
+    def test_values_property_mutation(self):
+        """Test that mutating the 'values' property affects the IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list.values.add("1.1.1.1")
+        self.assertEqual(len(ip_list), 3)
+        self.assertIn("1.1.1.1", ip_list)
+
+    def test_list_property(self):
+        """Test that the 'list' property returns a list view of IPs."""
+        ips = ["192.168.1.1", "10.0.0.1", "8.8.8.8"]
+        ip_list = IPList(ips=ips)
+        ip_list_view = ip_list.list
+        self.assertIsInstance(ip_list_view, list)
+        self.assertEqual(len(ip_list_view), 3)
+        self.assertIn("192.168.1.1", ip_list_view)
+        self.assertIn("10.0.0.1", ip_list_view)
+        self.assertIn("8.8.8.8", ip_list_view)
+
+    def test_list_property_is_copy(self):
+        """Test that the 'list' property returns a copy, not a reference."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        ip_list_view = ip_list.list
+        # Mutating the list should not affect the original IPList
+        ip_list_view.append("8.8.8.8")
+        self.assertEqual(len(ip_list), 2)
+        self.assertNotIn("8.8.8.8", ip_list)
+
+    def test_quoted_abs_property_with_file(self):
+        """Test the 'quoted_abs' property with a file-based IPList."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        quoted_path = ip_list.quoted_abs
+        self.assertIsNotNone(quoted_path)
+        self.assertIsInstance(quoted_path, str)
+        # The path should be quoted (safe for shell use)
+        # Since test_data/valid_ips.txt doesn't have special characters,
+        # it might not have quotes, but it should contain the filename
+        self.assertIn("valid_ips.txt", quoted_path)
+
+    def test_quoted_abs_property_with_list(self):
+        """Test that 'quoted_abs' returns None for list-based IPList."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        self.assertIsNone(ip_list.quoted_abs)
+
+    def test_quoted_absolute_path_method(self):
+        """Test the 'quoted_absolute_path' property."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        quoted_path = ip_list.quoted_absolute_path
+        self.assertIsNotNone(quoted_path)
+        self.assertIsInstance(quoted_path, str)
+        # Should contain the absolute path
+        self.assertIn("valid_ips.txt", quoted_path)
+
+    def test_quoted_abs_aliases_quoted_absolute_path(self):
+        """Test that 'quoted_abs' property aliases 'quoted_absolute_path' property."""
+        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
+        self.assertEqual(ip_list.quoted_abs, ip_list.quoted_absolute_path)
 
 
 if __name__ == "__main__":
