@@ -17,7 +17,7 @@ class IPList:
 
     Attributes:
         file_path (Path | None): The path to the file containing IP addresses.
-            alises: file, path
+            aliases: file, path
             coersion: quoted_abs[olute]
         ignore_invalid (bool): Whether to ignore invalid IP addresses.
         ips (Set[str]): A set of valid IP addresses.
