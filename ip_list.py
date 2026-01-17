@@ -75,9 +75,19 @@ class IPList:
         logging.debug("Loading IP list from provided list")
         self.ips.clear()
         for line in ips:
+            # Normalize whitespace
             line = line.strip()
-            if not line or "#" in line:
+            if not line:
+                # Skip empty lines
                 continue
+
+            # Handle inline comments in the same way as file-based loading:
+            # take only the part before the first '#' and strip it again.
+            if "#" in line:
+                line = line.split("#", 1)[0].strip()
+                if not line:
+                    # Line contained only a comment after stripping
+                    continue
             try:
                 ip = ipaddress.ip_address(line)
             except ValueError:
