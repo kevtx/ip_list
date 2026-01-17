@@ -251,26 +251,83 @@ class IPList:
 
     @property
     def file(self):
+        """
+        Alias for :attr:`file_path`.
+
+        Returns
+        -------
+        Optional[pathlib.Path]
+            The path to the underlying IP list file, or ``None`` if this
+            instance was created from an in-memory list of IPs.
+        """
         return self.file_path
 
     @property
     def path(self):
+        """
+        Alias for :attr:`file_path`.
+
+        Returns
+        -------
+        Optional[pathlib.Path]
+            The path to the underlying IP list file, or ``None`` if this
+            instance was created from an in-memory list of IPs.
+        """
         return self.file_path
 
     @property
-    def ip_set(self):
+    def set(self):
+        """
+        Alias for :attr:`ips`.
+
+        Returns
+        -------
+        Set[str]
+            The internal set of IPv4 address strings managed by this instance.
+            Mutating this set will affect the contents of the ``IPList``.
+        """
         return self.ips
 
     @property
     def values(self):
+        """
+        Alias for :attr:`ips`.
+
+        Returns
+        -------
+        Set[str]
+            The internal set of IPv4 address strings managed by this instance.
+            Mutating this set will affect the contents of the ``IPList``.
+        """
         return self.ips
 
     @property
     def list(self):
+        """
+        List view of :attr:`ips`.
+
+        Returns
+        -------
+        List[str]
+            A list containing all IPv4 address strings currently stored in
+            the internal set. The returned list is a copy and can be mutated
+            without affecting the underlying set.
+        """
         return list(self.ips)
 
     @property
     def quoted_abs(self):
+        """
+        Shell-quoted absolute path to the backing file.
+
+        Returns
+        -------
+        Optional[str]
+            The absolute path to :attr:`file_path`, expanded with
+            ``Path.expanduser()``, converted to a string, and safely quoted
+            using :func:`shlex.quote`. Returns ``None`` if no file is
+            associated with this instance.
+        """
         return quote(str(self.path.expanduser().absolute())) if self.path else None
 
 
