@@ -209,16 +209,24 @@ class IPList:
             return self.ips == other.ips
         return False
 
-    def __contains__(self, ip: str) -> bool:
-        """
-        Checks if a given IP is in the list.
+    def __contains__(self, ip: object) -> bool:
+        """Check whether a value is contained in this list.
+
+        This implements the standard container protocol used by
+        membership tests (``in`` / ``not in``) and by helpers such as
+        ``unittest.TestCase.assertIn``.
 
         Args:
-            ip (str): The IP address to check.
+            ip (object): Value to test for membership. Only strings are
+                considered valid IP candidates; any non-string value
+                will return ``False``.
 
         Returns:
-            bool: True if the IP is in the list, False otherwise.
+            bool: ``True`` if *ip* is a string and is present in the
+            underlying IP set, otherwise ``False``.
         """
+        if not isinstance(ip, str):
+            return False
         return ip in self.ips
 
     def __repr__(self):
