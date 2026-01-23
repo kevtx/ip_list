@@ -11,6 +11,14 @@ logging.basicConfig(
 )
 
 
+class InvalidIPListError(Exception):
+    """Custom exception for invalid IP list errors."""
+
+
+class IPv4OnlyError(Exception):
+    """Custom exception for IPv6 addresses found when only IPv4 is allowed."""
+
+
 class IPList:
     """
     A list of IP addresses.
@@ -18,7 +26,7 @@ class IPList:
     Attributes:
         file_path (Path | None): The path to the file containing IP addresses.
             aliases: file, path
-            coercion: quoted_abs[olute]
+            coercion: quoted_absolute_path
         ignore_invalid (bool): Whether to ignore invalid IP addresses.
         ips (Set[str]): A set of valid IP addresses.
             aliases: values, set
@@ -95,7 +103,7 @@ class IPList:
                     logging.debug(f"Ignoring invalid IP address: {line}")
                     continue
                 else:
-                    raise ValueError(f"Invalid IP address found: {line}")
+                    raise InvalidIPListError(f"Invalid IP address found: {line}")
 
             if ip.version == 4:
                 self.ips.add(line)
@@ -103,7 +111,7 @@ class IPList:
                 if self.ignore_invalid:
                     logging.debug(f"Ignoring IPv6 address: {line}")
                 else:
-                    raise ValueError(f"IPv6 address found and not ignored: {line}")
+                    raise IPv4OnlyError(f"IPv6 address found and not ignored: {line}")
         logging.info(f"Loaded {len(self.ips)} IPs from list")
 
     def read(self):
@@ -131,7 +139,7 @@ class IPList:
                         logging.debug(f"Ignoring invalid IP address: {line}")
                         continue
                     else:
-                        raise ValueError(f"Invalid IP address found: {line}")
+                        raise InvalidIPListError(f"Invalid IP address found: {line}")
 
                 if ip.version == 4:
                     ips_from_file.add(line)
@@ -139,7 +147,9 @@ class IPList:
                     if self.ignore_invalid:
                         logging.debug(f"Ignoring IPv6 address: {line}")
                     else:
-                        raise ValueError(f"IPv6 address found and not ignored: {line}")
+                        raise IPv4OnlyError(
+                            f"IPv6 address found and not ignored: {line}"
+                        )
 
         self.ips = ips_from_file
         logging.info(f"Loaded IP list from: {self.file_path}")
@@ -324,33 +334,29 @@ class IPList:
         return list(self.ips)
 
     @property
-    def quoted_absolute_path(self) -> Optional[str]:
-        """
-        Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
-
-        The returned string is safe to embed in shell commands because it is quoted using shlex.quote.
-        """
-        return quote(str(self.path.expanduser().absolute())) if self.path else None
-
-    @property
-    def quoted_abs(self) -> Optional[str]:
-        """
-        Shell-quoted absolute path to the backing file.
+    def quoted_absolute_path(self) -> str:
+        """Return the shell-quoted absolute path to the IP list file.
 
         Returns
         -------
-        Optional[str]
+        str
             The absolute path to :attr:`file_path`, expanded with
             ``Path.expanduser()``, converted to a string, and safely quoted
-            using :func:`shlex.quote`. Returns ``None`` if no file is
-            associated with this instance.
+            using :func:`shlex.quote`.
+
+        Raises
+        ------
+        ValueError
+            If no :attr:`file_path` is associated with this instance.
 
         Notes
         -----
-        This is a backwards-compatible alias for :attr:`quoted_absolute_path`.
-        Prefer using :attr:`quoted_absolute_path` for clarity.
+        This property is primarily intended for constructing shell commands
+        that reference the underlying file path.
         """
-        return self.quoted_absolute_path
+        if not self.path:
+            raise ValueError("Cannot compute quoted path: no file_path set")
+        return quote(str(self.path.expanduser().absolute()))
 
 
 if __name__ == "__main__":

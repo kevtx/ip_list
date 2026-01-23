@@ -6,7 +6,7 @@ from pathlib import Path
 # Add the parent directory to the sys.path to allow imports from the main project
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from ip_list import IPList
+from ip_list import InvalidIPListError, IPList, IPv4OnlyError
 
 
 class TestIPList(unittest.TestCase):
@@ -54,12 +54,14 @@ class TestIPList(unittest.TestCase):
 
     def test_read_invalid_ips_raise_error(self):
         """Test reading a file with invalid IPs and ignore_invalid=False."""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidIPListError):
             IPList(self.invalid_ips_file)
 
     def test_read_ipv6_raise_error(self):
         """Test reading a file with an IPv6 address and ignore_invalid=False."""
-        with self.assertRaisesRegex(ValueError, "IPv6 address found and not ignored"):
+        with self.assertRaisesRegex(
+            IPv4OnlyError, "IPv6 address found and not ignored"
+        ):
             IPList(self.ipv6_file)
 
     def test_read_invalid_ips_ignore(self):
@@ -130,7 +132,7 @@ class TestIPList(unittest.TestCase):
     def test_init_with_list_invalid_ips_raise(self):
         """Test initializing with invalid IPs and ignore_invalid=False."""
         ips = ["192.168.1.1", "not-an-ip", "10.0.0.1"]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidIPListError):
             IPList(ips=ips)
 
     def test_init_with_list_invalid_ips_ignore(self):
@@ -144,7 +146,9 @@ class TestIPList(unittest.TestCase):
     def test_init_with_list_ipv6_raise(self):
         """Test initializing with IPv6 and ignore_invalid=False."""
         ips = ["192.168.1.1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
-        with self.assertRaisesRegex(ValueError, "IPv6 address found and not ignored"):
+        with self.assertRaisesRegex(
+            IPv4OnlyError, "IPv6 address found and not ignored"
+        ):
             IPList(ips=ips)
 
     def test_init_with_list_ipv6_ignore(self):
@@ -324,36 +328,32 @@ class TestIPList(unittest.TestCase):
         self.assertEqual(len(ip_list), 2)
         self.assertNotIn("8.8.8.8", ip_list)
 
-    def test_quoted_abs_property_with_file(self):
-        """Test the 'quoted_abs' property with a file-based IPList."""
-        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        quoted_path = ip_list.quoted_abs
-        self.assertIsNotNone(quoted_path)
-        self.assertIsInstance(quoted_path, str)
-        # The path should be quoted (safe for shell use)
-        # Since test_data/valid_ips.txt doesn't have special characters,
-        # it might not have quotes, but it should contain the filename
-        self.assertIn("valid_ips.txt", quoted_path)
-
     def test_quoted_abs_property_with_list(self):
-        """Test that 'quoted_abs' returns None for list-based IPList."""
+        """Test that 'quoted_abs' raises when no file_path is set.
+
+        For IPList instances created from an in-memory list (no backing
+        file_path), attempting to obtain a quoted path is a usage error
+        and should raise :class:`ValueError`.
+        """
         ips = ["192.168.1.1", "10.0.0.1"]
         ip_list = IPList(ips=ips)
-        self.assertIsNone(ip_list.quoted_abs)
+        with self.assertRaisesRegex(ValueError, "no file_path set"):
+            _ = ip_list.quoted_absolute_path
+
+    def test_quoted_absolute_path_with_list_raises(self):
+        """quoted_absolute_path should also raise when no file_path is set."""
+        ips = ["192.168.1.1", "10.0.0.1"]
+        ip_list = IPList(ips=ips)
+        with self.assertRaisesRegex(ValueError, "no file_path set"):
+            _ = ip_list.quoted_absolute_path
 
     def test_quoted_absolute_path_method(self):
         """Test the 'quoted_absolute_path' property."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        quoted_path = ip_list.quoted_absolute_path
-        self.assertIsNotNone(quoted_path)
-        self.assertIsInstance(quoted_path, str)
-        # Should contain the absolute path
-        self.assertIn("valid_ips.txt", quoted_path)
-
-    def test_quoted_abs_aliases_quoted_absolute_path(self):
-        """Test that 'quoted_abs' property aliases 'quoted_absolute_path' property."""
-        ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
-        self.assertEqual(ip_list.quoted_abs, ip_list.quoted_absolute_path)
+        quoted_absolute_path = ip_list.quoted_absolute_path
+        self.assertIsNotNone(quoted_absolute_path)
+        self.assertIsInstance(quoted_absolute_path, str)
+        self.assertIn("valid_ips.txt", quoted_absolute_path)
 
 
 if __name__ == "__main__":
