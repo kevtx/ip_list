@@ -10,9 +10,9 @@ PYTHON_VERSION := "3.8"
 PROJECT_ROOT := clean(justfile_directory())
 
 
-[group('project')]
-init:
-    git config --local core.hooksPath .githooks
+#[group('project')]
+#init:
+#    git config --local core.hooksPath .githooks
 
 
 [unix]
