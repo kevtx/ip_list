@@ -340,13 +340,6 @@ class TestIPList(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no file_path set"):
             _ = ip_list.quoted_absolute_path
 
-    def test_quoted_absolute_path_with_list_raises(self):
-        """quoted_absolute_path should also raise when no file_path is set."""
-        ips = ["192.168.1.1", "10.0.0.1"]
-        ip_list = IPList(ips=ips)
-        with self.assertRaisesRegex(ValueError, "no file_path set"):
-            _ = ip_list.quoted_absolute_path
-
     def test_quoted_absolute_path_method(self):
         """Test the 'quoted_absolute_path' property."""
         ip_list = IPList(self.valid_ips_file, ignore_invalid=True)
