@@ -27,6 +27,9 @@ class IPList:
         file_path (Path | None): The path to the file containing IP addresses.
             aliases: file, path
             coercion: quoted_absolute_path
+                When used, this coercion returns the shell-quoted absolute path.
+                If no ``file_path`` is set, it raises ``ValueError`` instead of
+                returning ``None`` as in the previous implementation.
         ignore_invalid (bool): Whether to ignore invalid IP addresses.
         ips (Set[str]): A set of valid IP addresses.
             aliases: values, set
