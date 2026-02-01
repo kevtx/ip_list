@@ -12,13 +12,39 @@ logging.basicConfig(
 
 
 class InvalidIPListError(Exception):
-    """Custom exception for invalid IP list errors."""
+    """
+    Raised when an IP list is structurally invalid or cannot be processed.
+
+    This exception is intended for situations where the IP list as a whole is
+    unusable, such as:
+
+    - Malformed or non-IP content where a list of IP addresses is expected.
+    - Inconsistent configuration or state that prevents an `IPList` instance
+      from being constructed or loaded correctly.
+
+    Library code can raise this exception to signal that the caller should
+    treat the entire list as invalid, rather than just skipping individual
+    entries. Callers are expected to catch this exception at a higher level
+    (for example, around IP list loading) and either report the error to the
+    user or fall back to a safe default.
+    """
 
 
 class IPv4OnlyError(Exception):
-    """Custom exception for IPv6 addresses found when only IPv4 is allowed."""
+    """
+    Raised when an IPv6 address is encountered but only IPv4 addresses
+    are allowed.
 
+    This exception should be used in contexts where the library or
+    application is explicitly configured to accept IPv4 addresses only.
+    If any IPv6 address is detected in the input data under such a policy,
+    this exception can be raised to signal that the input violates the
+    IPv4-only constraint.
 
+    Callers that require strict IPv4-only behavior can catch this exception
+    to abort processing, log the offending data, or prompt the user to
+    correct the IP list source.
+    """
 class IPList:
     """
     A list of IP addresses.
