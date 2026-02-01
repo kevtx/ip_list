@@ -11,6 +11,40 @@ logging.basicConfig(
 )
 
 
+class InvalidIPListError(Exception):
+    """
+    Raised when an IP list is structurally invalid or cannot be processed.
+
+    This exception is intended for situations where the IP list as a whole is
+    unusable, such as:
+
+    - Malformed or non-IP content where a list of IP addresses is expected.
+    - Inconsistent configuration or state that prevents an `IPList` instance
+      from being constructed or loaded correctly.
+
+    Library code can raise this exception to signal that the caller should
+    treat the entire list as invalid, rather than just skipping individual
+    entries. Callers are expected to catch this exception at a higher level
+    (for example, around IP list loading) and either report the error to the
+    user or fall back to a safe default.
+    """
+
+
+class IPv4OnlyError(Exception):
+    """
+    Raised when an IPv6 address is encountered but only IPv4 addresses
+    are allowed.
+
+    This exception should be used in contexts where the library or
+    application is explicitly configured to accept IPv4 addresses only.
+    If any IPv6 address is detected in the input data under such a policy,
+    this exception can be raised to signal that the input violates the
+    IPv4-only constraint.
+
+    Callers that require strict IPv4-only behavior can catch this exception
+    to abort processing, log the offending data, or prompt the user to
+    correct the IP list source.
+    """
 class IPList:
     """
     A list of IP addresses.
@@ -18,7 +52,10 @@ class IPList:
     Attributes:
         file_path (Path | None): The path to the file containing IP addresses.
             aliases: file, path
-            coercion: quoted_abs[olute]
+            coercion: quoted_absolute_path
+                When used, this coercion returns the shell-quoted absolute path.
+                If no ``file_path`` is set, it raises ``ValueError`` instead of
+                returning ``None`` as in the previous implementation.
         ignore_invalid (bool): Whether to ignore invalid IP addresses.
         ips (Set[str]): A set of valid IP addresses.
             aliases: values, set
@@ -95,7 +132,7 @@ class IPList:
                     logging.debug(f"Ignoring invalid IP address: {line}")
                     continue
                 else:
-                    raise ValueError(f"Invalid IP address found: {line}")
+                    raise InvalidIPListError(f"Invalid IP address found: {line}")
 
             if ip.version == 4:
                 self.ips.add(line)
@@ -103,7 +140,7 @@ class IPList:
                 if self.ignore_invalid:
                     logging.debug(f"Ignoring IPv6 address: {line}")
                 else:
-                    raise ValueError(f"IPv6 address found and not ignored: {line}")
+                    raise IPv4OnlyError(f"IPv6 address found and not ignored: {line}")
         logging.info(f"Loaded {len(self.ips)} IPs from list")
 
     def read(self):
@@ -131,7 +168,7 @@ class IPList:
                         logging.debug(f"Ignoring invalid IP address: {line}")
                         continue
                     else:
-                        raise ValueError(f"Invalid IP address found: {line}")
+                        raise InvalidIPListError(f"Invalid IP address found: {line}")
 
                 if ip.version == 4:
                     ips_from_file.add(line)
@@ -139,7 +176,9 @@ class IPList:
                     if self.ignore_invalid:
                         logging.debug(f"Ignoring IPv6 address: {line}")
                     else:
-                        raise ValueError(f"IPv6 address found and not ignored: {line}")
+                        raise IPv4OnlyError(
+                            f"IPv6 address found and not ignored: {line}"
+                        )
 
         self.ips = ips_from_file
         logging.info(f"Loaded IP list from: {self.file_path}")
@@ -324,33 +363,29 @@ class IPList:
         return list(self.ips)
 
     @property
-    def quoted_absolute_path(self) -> Optional[str]:
-        """
-        Return the shell-quoted absolute path to the IP list file, or None if no file is associated.
-
-        The returned string is safe to embed in shell commands because it is quoted using shlex.quote.
-        """
-        return quote(str(self.path.expanduser().absolute())) if self.path else None
-
-    @property
-    def quoted_abs(self) -> Optional[str]:
-        """
-        Shell-quoted absolute path to the backing file.
+    def quoted_absolute_path(self) -> str:
+        """Return the shell-quoted absolute path to the IP list file.
 
         Returns
         -------
-        Optional[str]
+        str
             The absolute path to :attr:`file_path`, expanded with
             ``Path.expanduser()``, converted to a string, and safely quoted
-            using :func:`shlex.quote`. Returns ``None`` if no file is
-            associated with this instance.
+            using :func:`shlex.quote`.
+
+        Raises
+        ------
+        ValueError
+            If no :attr:`file_path` is associated with this instance.
 
         Notes
         -----
-        This is a backwards-compatible alias for :attr:`quoted_absolute_path`.
-        Prefer using :attr:`quoted_absolute_path` for clarity.
+        This property is primarily intended for constructing shell commands
+        that reference the underlying file path.
         """
-        return self.quoted_absolute_path
+        if not self.path:
+            raise ValueError("Cannot compute quoted path: no file_path set")
+        return quote(str(self.path.expanduser().absolute()))
 
 
 if __name__ == "__main__":

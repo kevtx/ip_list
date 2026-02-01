@@ -1,20 +1,18 @@
-set dotenv-load
+set quiet
+set allow-duplicate-variables
 
-import '{{env_var("HOME")}}/.config/just/python.justfile'
-import '{{env_var("HOME")}}/.config/just/conda.justfile'
-
-PROJECT_ROOT := clean(justfile_directory())
+import? '~/.config/just/base.justfile'
+import? '~/.config/just/python.justfile'
+import? '~/.config/just/conda.justfile'
 
 APP_NAME := "python-iplist"
 PYTHON_VERSION := "3.8"
-
-default:
-    just --choose
+PROJECT_ROOT := clean(justfile_directory())
 
 
-[group('project')]
-init:
-    git config --local core.hooksPath .githooks
+#[group('project')]
+#init:
+#    git config --local core.hooksPath .githooks
 
 
 [unix]
