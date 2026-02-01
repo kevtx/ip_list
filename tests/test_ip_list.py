@@ -328,20 +328,13 @@ class TestIPList(unittest.TestCase):
         self.assertEqual(len(ip_list), 2)
         self.assertNotIn("8.8.8.8", ip_list)
 
-    def test_quoted_abs_property_with_list(self):
-        """Test that 'quoted_abs' raises when no file_path is set.
+    def test_quoted_absolute_path_with_list_raises(self):
+        """Test that 'quoted_absolute_path' raises when no file_path is set.
 
         For IPList instances created from an in-memory list (no backing
         file_path), attempting to obtain a quoted path is a usage error
         and should raise :class:`ValueError`.
         """
-        ips = ["192.168.1.1", "10.0.0.1"]
-        ip_list = IPList(ips=ips)
-        with self.assertRaisesRegex(ValueError, "no file_path set"):
-            _ = ip_list.quoted_absolute_path
-
-    def test_quoted_absolute_path_with_list_raises(self):
-        """quoted_absolute_path should also raise when no file_path is set."""
         ips = ["192.168.1.1", "10.0.0.1"]
         ip_list = IPList(ips=ips)
         with self.assertRaisesRegex(ValueError, "no file_path set"):
